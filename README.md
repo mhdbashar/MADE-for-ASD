@@ -1,6 +1,6 @@
 # MADE-for-ASD: A Multi-Atlas Deep Ensemble Network for Detecting Autism Spectrum Disorder
 
-This repository contains codes of our above titled paper, published in the "Computers in Biology and Medicine" journal. **Codes were primarily developed by Xuehan Liu**.
+This repository contains codes of our above titled paper, published in the "Computers in Biology and Medicine" journal. **Codes were primarily developed by [Xuehan Liu](https://github.com/lxhwww)**.
 
 Paper link: [[ScienceDirect](https://doi.org/10.1016/j.compbiomed.2024.109083)] [[arXiv](https://arxiv.org/abs/2407.07076)] [[PDF](https://hasan-rakibul.github.io/pdfs/liu2024made.pdf)]
 
