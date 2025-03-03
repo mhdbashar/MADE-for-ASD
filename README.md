@@ -1,6 +1,6 @@
 # MADE-for-ASD: A Multi-Atlas Deep Ensemble Network for Detecting Autism Spectrum Disorder
 
-This repository contains codes of our above titled paper, accepted to be published in the "Computers in Biology and Medicine" journal. **Codes are primarily developed by Xuehan Liu**.
+This repository contains codes of our above titled paper, published in the "Computers in Biology and Medicine" journal. **Codes were primarily developed by Xuehan Liu**.
 
 Paper link: [[ScienceDirect](https://doi.org/10.1016/j.compbiomed.2024.109083)] [[arXiv](https://arxiv.org/abs/2407.07076)] [[PDF](https://hasan-rakibul.github.io/pdfs/liu2024made.pdf)]
 
@@ -54,6 +54,8 @@ python prepare_data.py --folds=10 --whole cc200 aal ez
 rm ./data/models/*mlp*
 python nn.py --whole cc200 aal ez
 ```  
+
+**Disclaimer:** Despite our best efforts, this codebase does not appear to be the final version, especially with respect to the k-fold cross-validation reported in the paper. We, the co-authors, have been actively trying to contact the first author, Xuehan Liu, to obtain the latest version of the code. We will promptly update this repository once we hear from her.
 
 5. Evaluating the MLP model on test dataset. You can use the saved models from provious or download the models from the [link](https://drive.google.com/drive/folders/1rIZpXdafzI-nb0YonkL0XQs6pOSSxRUf?usp=drive_link), and **can run this command directly without running previous steps**.
 
