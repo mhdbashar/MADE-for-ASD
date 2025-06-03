@@ -1,13 +1,15 @@
 # MADE-for-ASD: A Multi-Atlas Deep Ensemble Network for Detecting Autism Spectrum Disorder
 
-This repository contains codes of our above titled paper, published in the "Computers in Biology and Medicine" journal. **Codes were primarily developed by [Xuehan Liu](https://github.com/lxhwww)**.
+This repository contains the code of our above-titled paper, published in the "Computers in Biology and Medicine" journal. **Codes were primarily developed by [Xuehan Liu](https://github.com/lxhwww)**.
 
 Paper link: [[ScienceDirect](https://doi.org/10.1016/j.compbiomed.2024.109083)] [[arXiv](https://arxiv.org/abs/2407.07076)] [[PDF](https://hasan-rakibul.github.io/pdfs/liu2024made.pdf)]
 
 **Author**: Xuehan Liu*, Md Rakibul Hasan*, Tom Gedeon and Md Zakir Hossain <br>
 (*Equal contribution)
 
-**Abstract:** In response to the global need for efficient early diagnosis of Autism Spectrum Disorder (ASD), we aim to bridge the gap between traditional, time-consuming diagnostic methods and potential automated solutions. To this end, we propose a multi-atlas deep ensemble network, **MADE-for-ASD**, that integrates multiple atlases of the brain's functional magnetic resonance imaging (fMRI) data through a weighted deep ensemble network. We further integrate demographic information into the prediction workflow, which enhances ASD detection accuracy and offers a more holistic perspective on patient profiling. We experiment with the well-known publicly available Autism Brain Imaging Data Exchange (ABIDE), consisting of resting state fMRI data from 17 different laboratories around the globe. Our proposed system achieves an accuracy of 75.2% on the whole dataset and 96.40% on a subset – both surpassing the reported ASD detection performances in the literature. The proposed system can potentially pave the way for more cost-effective, efficient and scalable strategies in ASD diagnosis. Codes and evaluations are publicly available at https://github.com/hasan-rakibul/MADE-for-ASD.
+**Abstract:** In response to the global need for efficient early diagnosis of Autism Spectrum Disorder (ASD), we aim to bridge the gap between traditional, time-consuming diagnostic methods and potential automated solutions. To this end, we propose a multi-atlas deep ensemble network, **MADE-for-ASD**, that integrates multiple atlases of the brain's functional magnetic resonance imaging (fMRI) data through a weighted deep ensemble network. We further integrate demographic information into the prediction workflow, which enhances ASD detection accuracy and offers a more holistic perspective on patient profiling. We experiment with the well-known publicly available Autism Brain Imaging Data Exchange (ABIDE), consisting of resting state fMRI data from 17 different laboratories around the globe. Our proposed system achieves an accuracy of 75.2% on the whole dataset and 96.40% on a subset – both surpassing the reported ASD detection performances in the literature. The proposed system can potentially pave the way for more cost-effective, efficient and scalable strategies in ASD diagnosis.
+
+**Disclaimer:** While we have made every effort to ensure the completeness of this codebase, some components (implementation of k-fold cross-validation and weighted voting mechanism) are missing. We, the co-authors, have actively tried to contact the first author, [Xuehan Liu](https://github.com/lxhwww), to obtain the most up-to-date version of the code once we detected the issue. Unfortunately, our efforts were unsuccessful, as her university email is no longer active following her graduation. We will promptly update this repository should we receive any further information. To get the missing bits, we recommend reaching out to her directly if possible in any way.
 
 ## Environment Setup
 
@@ -54,8 +56,6 @@ python prepare_data.py --folds=10 --whole cc200 aal ez
 rm ./data/models/*mlp*
 python nn.py --whole cc200 aal ez
 ```  
-
-**Disclaimer:** Despite our best efforts, this codebase does not appear to be the final version, especially with respect to the k-fold cross-validation reported in the paper. We, the co-authors, have been actively trying to contact the first author, Xuehan Liu, to obtain the latest version of the code. We will promptly update this repository once we hear from her.
 
 5. Evaluating the MLP model on test dataset. You can use the saved models from provious or download the models from the [link](https://drive.google.com/drive/folders/1rIZpXdafzI-nb0YonkL0XQs6pOSSxRUf?usp=drive_link), and **can run this command directly without running previous steps**.
 
