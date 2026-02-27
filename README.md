@@ -9,7 +9,7 @@ Paper link: [[ScienceDirect](https://doi.org/10.1016/j.compbiomed.2024.109083)] 
 
 **Abstract:** In response to the global need for efficient early diagnosis of Autism Spectrum Disorder (ASD), we aim to bridge the gap between traditional, time-consuming diagnostic methods and potential automated solutions. To this end, we propose a multi-atlas deep ensemble network, **MADE-for-ASD**, that integrates multiple atlases of the brain's functional magnetic resonance imaging (fMRI) data through a weighted deep ensemble network. We further integrate demographic information into the prediction workflow, which enhances ASD detection accuracy and offers a more holistic perspective on patient profiling. We experiment with the well-known publicly available Autism Brain Imaging Data Exchange (ABIDE), consisting of resting state fMRI data from 17 different laboratories around the globe. Our proposed system achieves an accuracy of 75.2% on the whole dataset and 96.40% on a subset – both surpassing the reported ASD detection performances in the literature. The proposed system can potentially pave the way for more cost-effective, efficient and scalable strategies in ASD diagnosis.
 
-**Disclaimer:** While we have made every effort to ensure the completeness of this codebase, some components (weighted voting mechanism) are still missing. However, the critical **data leakage issue in feature selection has been fixed** - the feature selector is now properly fitted on training data only and then applied to validation/test data. Comprehensive evaluation metrics (accuracy, precision, F1-score, sensitivity, specificity, ROC-AUC) are now computed and saved.
+**Disclaimer:** We have made every effort to ensure the completeness of this codebase. However, the critical **data leakage issue in feature selection has been fixed** - the feature selector is now properly fitted on training data only and then applied to validation/test data. Comprehensive evaluation metrics (accuracy, precision, F1-score, sensitivity, specificity, ROC-AUC) are now computed and saved.
 
 ## Recent Updates
 
@@ -17,7 +17,7 @@ Paper link: [[ScienceDirect](https://doi.org/10.1016/j.compbiomed.2024.109083)] 
 - **Enhanced Metrics**: Full evaluation metrics are now computed including confusion matrix, accuracy, precision, F1-score, sensitivity, specificity, and ROC-AUC.
 - **Results Files**: Comprehensive result files (`nn_metrics.csv`, `nn_metrics-withLeakage.csv`, `nn_metrics-withoutLeakage.csv`, `nn_evaluation_results.csv`) are now available showing model performance.
 
-**summary of the changes — Feature-selection & metrics improvements**
+**Summary of the changes — Feature-selection & metrics improvements**
 
 - **Leakage fix (explicit):** feature selection now fits `SelectKBest` on training functional features only (excludes the last two pheno columns), then transforms validation/test splits before re-appending the pheno columns (sex, age). This prevents information leakage from validation/test into feature selection.
 - **More metrics & robustness:** both `nn.py` and `nn_evaluate.py` now import and use `sklearn.metrics` (confusion matrix, accuracy, precision, F1, ROC-AUC) and compute sensitivity/specificity. ROC‑AUC prefers predicted probabilities when available and falls back safely if not.
