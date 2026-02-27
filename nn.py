@@ -23,6 +23,8 @@ import os
 import numpy as np
 import tensorflow.compat.v1 as tf
 from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, f1_score, roc_auc_score
+import pandas as pd
 
 
 from docopt import docopt
@@ -483,41 +485,35 @@ def run_nn(hdf5, experiment, code_size_1, code_size_2):
         X_valid, y_valid, \
         X_test, y_test = load_fold(hdf5["patients"], exp_storage, fold)
 
-        X_all=np.vstack((X_train,X_valid,X_test))
-        #np.save('X_NYU.npy',X_all)
-        print(X_all.shape)
-        
+        # Avoid leakage: fit feature selector on training data only, then transform valid/test
+        train = X_train.shape[0]
+        valid = X_valid.shape[0]
+        test = X_test.shape[0]
 
-        X_all=X_all[:,:-2]
-        y_all=np.concatenate((np.array(y_train),np.array(y_valid),np.array(y_test)),axis=0)
-        #np.save('y_NYU.npy',y_all)
-        
-        print(y_all.shape)
+        # Split functional features (all except last two pheno columns)
+        X_train_func = X_train[:, :-2]
+        X_valid_func = X_valid[:, :-2]
+        X_test_func = X_test[:, :-2]
 
-        ks=0
-        if X_all.shape[1]<10000:
-          ks=1000
-        else:
-          ks=3000
-        X_new=SelectKBest(f_classif, k=ks).fit_transform(X_all, y_all)
-        print(X_new.shape)
+        # Choose k based on number of features in training functional data
+        ks = 1000 if X_train_func.shape[1] < 10000 else 3000
+        selector = SelectKBest(f_classif, k=ks).fit(X_train_func, np.array(y_train))
 
-        train=X_train.shape[0]
-        valid=X_valid.shape[0]
-        test=X_test.shape[0]
+        X_train_sel = selector.transform(X_train_func)
+        X_valid_sel = selector.transform(X_valid_func)
+        X_test_sel = selector.transform(X_test_func)
 
-      
-        X_train=X_new[:train]
-        X_valid=X_new[train:train+valid]
-        X_test=X_new[train+valid:train+valid+test]
+        print(X_train_sel.shape, X_valid_sel.shape, X_test_sel.shape)
 
+        # Re-append pheno columns (sex, age) that were at the end
+        X_train = np.concatenate((X_train_sel, X_train[:, -2:]), axis=1)
+        X_valid = np.concatenate((X_valid_sel, X_valid[:, -2:]), axis=1)
+        X_test  = np.concatenate((X_test_sel, X_test[:, -2:]), axis=1)
 
-        X_pheno=np.concatenate((X_new,X_all[:,-2:]),axis=1)
-        print(X_pheno.shape)
+        X_train_2 = X_train
+        X_valid_2 = X_valid
+        X_test_2 = X_test
 
-        X_train_2=X_pheno[:train]
-        X_valid_2=X_pheno[train:train+valid]
-        X_test_2=X_pheno[train+valid:train+valid+test]
 
         print(X_test_2.shape)
 
@@ -661,12 +657,42 @@ if __name__ == "__main__":
     # print(np.argmax(y_pred, 1))
     # print(np.argmax(y_test, 1))
 
-    correct_pred=sum(np.equal(np.argmax(y_pred, 1),np.argmax(y_test, 1)))
+    # Compute classification metrics
+    y_true = np.argmax(y_test, 1)
+    y_pred_labels = np.argmax(y_pred, 1)
 
-    print(correct_pred/len(np.argmax(y_test, 1)))
-    
-    #accuracy = tf.cast(correct_prediction, "float")
-    #print('accuracy:',accuracy)
-    #print(y_pred)
-    #print(y_test)
+    # Confusion matrix (TN, FP, FN, TP)
+    cm = confusion_matrix(y_true, y_pred_labels, labels=[0, 1]).astype(float)
+    TN, FP, FN, TP = cm.ravel()
+
+    specificity = TN / (TN + FP) if (TN + FP) > 0 else np.nan
+    precision = TP / (TP + FP) if (TP + FP) > 0 else np.nan
+    sensitivity = TP / (TP + FN) if (TP + FN) > 0 else np.nan
+
+    accuracy = accuracy_score(y_true, y_pred_labels)
+    fscore = f1_score(y_true, y_pred_labels)
+    try:
+        if y_pred.shape[1] > 1:
+            roc_auc = roc_auc_score(y_true, y_pred[:, 1])
+        else:
+            roc_auc = roc_auc_score(y_true, y_pred_labels)
+    except Exception:
+        roc_auc = np.nan
+
+    # Pretty print results
+    print('\n=== Results ===')
+    print(f"Accuracy   : {accuracy:.4f}")
+    print(f"Precision  : {precision:.4f}")
+    print(f"F1-score   : {fscore:.4f}")
+    print(f"Sensitivity: {sensitivity:.4f}")
+    print(f"Specificity: {specificity:.4f}")
+    print(f"ROC-AUC    : {roc_auc:.4f}")
+    print(f"Confusion matrix (TN, FP, FN, TP): {int(TN)}, {int(FP)}, {int(FN)}, {int(TP)}")
+
+    # Save to CSV
+    df = pd.DataFrame([[accuracy, precision, fscore, sensitivity, specificity, roc_auc]],
+                      columns=["Accuracy", "Precision", "F1-score", "Sensitivity", "Specificity", "ROC-AUC"])
+    df.to_csv('nn_metrics.csv', index=False)
+
+    # End of script
 

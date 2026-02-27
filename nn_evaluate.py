@@ -33,7 +33,8 @@ from sklearn.feature_selection import SelectKBest,f_classif
 
 def nn_results(hdf5, experiment, code_size_1, code_size_2):
 
-    import pdb; pdb.set_trace()
+    # import pdb;
+    # pdb.set_trace()
     exp_storage = hdf5["experiments"][experiment]
 
     n_classes = 2
@@ -56,36 +57,34 @@ def nn_results(hdf5, experiment, code_size_1, code_size_2):
         X_test, y_test = load_fold(hdf5["patients"], exp_storage, fold)
 
 
-        X_all=np.vstack((X_train,X_valid,X_test))
-        y_all=np.concatenate((np.array(y_train),np.array(y_valid),np.array(y_test)),axis=0)
+        # Avoid leakage: fit selector on training functional features only and transform valid/test
+        train = X_train.shape[0]
+        valid = X_valid.shape[0]
+        test = X_test.shape[0]
 
-        # print(X_all.shape)
-        # print(y_all.shape)
+        X_train_func = X_train[:, :-2]
+        X_valid_func = X_valid[:, :-2]
+        X_test_func  = X_test[:, :-2]
 
-        ks=0
-        if X_train.shape[1]<10000:
-          ks=1000
-        else:
-          ks=3000    
-        X_new=SelectKBest(f_classif,k=ks).fit_transform(X_all[:,:-2], y_all)
-        # print(X_new.shape)
+        ks = 1000 if X_train_func.shape[1] < 10000 else 3000
+        selector = SelectKBest(f_classif, k=ks).fit(X_train_func, y_train)
 
-        train=X_train.shape[0]
-        valid=X_valid.shape[0]
-        test=X_test.shape[0]
+        X_train_sel = selector.transform(X_train_func)
+        X_valid_sel = selector.transform(X_valid_func)
+        X_test_sel  = selector.transform(X_test_func)
 
-        X_new=np.concatenate((X_new,X_all[:,-2:]),axis=1)
+        # Concatenate pheno columns (sex, age) back into feature matrix
+        X_func_sel_all = np.vstack((X_train_sel, X_valid_sel, X_test_sel))
+        X_pheno = np.concatenate((X_func_sel_all, np.vstack((X_train[:, -2:], X_valid[:, -2:], X_test[:, -2:]))), axis=1)
 
-        X_train=X_new[:train]
-        X_valid=X_new[train:train+valid]
-        X_test=X_new[train+valid:train+valid+test]
-
-        # print(X_new.shape)
-
-        #y_test = np.array([to_softmax(n_classes, y) for y in y_test])
+        X_train = X_pheno[:train]
+        X_valid = X_pheno[train:train+valid]
+        X_test = X_pheno[train+valid:train+valid+test]
 
 
-        #X_test=X_new[:]
+        # Build full evaluation set (concatenate selected train/valid/test sets) and labels
+        X_all_pheno = np.vstack((X_train, X_valid, X_test))
+        y_all = np.concatenate((np.array(y_train), np.array(y_valid), np.array(y_test)), axis=0)
         y_test = np.array([to_softmax(n_classes, y) for y in y_all])
 
         '''
@@ -143,7 +142,7 @@ def nn_results(hdf5, experiment, code_size_1, code_size_2):
                 output = sess.run(
                     model["output"],
                     feed_dict={
-                        model["input"]: X_new,
+                        model["input"]: X_all_pheno,
                         model["dropouts"][0]: 1.0,
                         model["dropouts"][1]: 1.0,
                         model["dropouts"][2]: 1.0,
@@ -163,9 +162,9 @@ def nn_results(hdf5, experiment, code_size_1, code_size_2):
                 X_sub=[]
                 y_sub=[]
 
-                for i in range(X_new.shape[0]):
+                for i in range(X_all_pheno.shape[0]):
                   if y_pred[i]==y_true[i]:
-                    X_sub.append(X_all[i])
+                    X_sub.append(X_all_pheno[i])
                     y_sub.append(y_pred[i])
 
                 X_sub=np.array(X_sub)
@@ -174,19 +173,28 @@ def nn_results(hdf5, experiment, code_size_1, code_size_2):
 
                 # print(X_sub.shape)
 
-                np.save('X_sub_without_NYU.npy',X_sub)
-                np.save('y_sub_without_NYU.npy',y_sub)
+                #np.save('X_sub_without_NYU.npy',X_sub)
+                #np.save('y_sub_without_NYU.npy',y_sub)
 
-                [[TN, FP], [FN, TP]] = confusion_matrix(y_true, y_pred, labels=[0, 1]).astype(float)
-                specificity = TN/(FP+TN)
-                precision = TP/(TP+FP)
-                sensivity = TP/(TP+FN)
+                # confusion matrix (TN, FP, FN, TP)
+                cm = confusion_matrix(y_true, y_pred, labels=[0, 1]).astype(float)
+                TN, FP, FN, TP = cm.ravel()
+                specificity = TN / (TN + FP) if (TN + FP) > 0 else np.nan
+                precision = TP / (TP + FP) if (TP + FP) > 0 else np.nan
+                sensitivity = TP / (TP + FN) if (TP + FN) > 0 else np.nan
 
                 accuracy = accuracy_score(y_true, y_pred)
                 fscore = f1_score(y_true, y_pred)
-                roc_auc = roc_auc_score(y_true, y_pred)
+                # Prefer probabilities for ROC-AUC if available
+                try:
+                    if output.shape[1] > 1:
+                        roc_auc = roc_auc_score(y_true, output[:, 1])
+                    else:
+                        roc_auc = roc_auc_score(y_true, y_pred)
+                except Exception:
+                    roc_auc = np.nan
 
-                results.append([accuracy, precision, fscore, sensivity, specificity, roc_auc])
+                results.append([accuracy, precision, fscore, sensitivity, specificity, roc_auc])
         finally:
             reset()
 
@@ -252,9 +260,28 @@ if __name__ == "__main__":
         print(experiment)
         results.append(nn_results(hdf5, experiment, code_size_1, code_size_2))
 
-    cols = ["Exp", "Accuracy", "Precision", "F1-score", "Sensivity", "Specificity", "ROC-AUC"]
+    cols = ["Exp", "Accuracy", "Precision", "F1-score", "Sensitivity", "Specificity", "ROC-AUC"]
     df = pd.DataFrame(results, columns=cols)
 
-    print('aaa',df[cols] \
+    # Ensure numeric columns are numeric and round for nicer display
+    for c in cols[1:]:
+        df[c] = pd.to_numeric(df[c], errors='coerce')
+
+    df_display = df.copy()
+    df_display[cols[1:]] = df_display[cols[1:]].round(4)
+
+    print('aaa', df_display[cols] \
         .sort_values(["Exp"]) \
-        .reset_index())
+        .reset_index(drop=True))
+
+    # Summary across experiments (mean ± std)
+    means = df[cols[1:]].mean()
+    stds = df[cols[1:]].std()
+    print("\nSummary (mean ± std):")
+    for col in cols[1:]:
+        m = means[col]
+        s = stds[col]
+        print(f"{col}: {m:.4f} ± {s:.4f}")
+
+    # Save results to CSV for easier inspection
+    df.to_csv('nn_evaluation_results.csv', index=False)
