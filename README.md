@@ -17,6 +17,13 @@ Paper link: [[ScienceDirect](https://doi.org/10.1016/j.compbiomed.2024.109083)] 
 - **Enhanced Metrics**: Full evaluation metrics are now computed including confusion matrix, accuracy, precision, F1-score, sensitivity, specificity, and ROC-AUC.
 - **Results Files**: Comprehensive result files (`nn_metrics.csv`, `nn_metrics-withLeakage.csv`, `nn_metrics-withoutLeakage.csv`, `nn_evaluation_results.csv`) are now available showing model performance.
 
+**summary of the changes — Feature-selection & metrics improvements**
+
+- **Leakage fix (explicit):** feature selection now fits `SelectKBest` on training functional features only (excludes the last two pheno columns), then transforms validation/test splits before re-appending the pheno columns (sex, age). This prevents information leakage from validation/test into feature selection.
+- **More metrics & robustness:** both `nn.py` and `nn_evaluate.py` now import and use `sklearn.metrics` (confusion matrix, accuracy, precision, F1, ROC-AUC) and compute sensitivity/specificity. ROC‑AUC prefers predicted probabilities when available and falls back safely if not.
+- **Output & storage:** results are printed in a human-readable summary and saved to CSV files (`nn_metrics.csv`, `nn_evaluation_results.csv`) for easier inspection and downstream analysis.
+
+
 ### Whole-Dataset 10‑Fold Evaluation
 The network was trained and evaluated on the *entire* ABIDE dataset prior to splitting for training/validation/testing, using the command:
 
